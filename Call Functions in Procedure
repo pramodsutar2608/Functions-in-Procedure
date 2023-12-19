@@ -1,0 +1,196 @@
+================================================================================
+
+                CALL FUNCTION OR USE FUNCTION IN PROCEDURE
+
+================================================================================
+Exmple:
+Requirement :
+Take empno from user and return ename from emp1 table using Function.
+
+-IN--->empno
+-OUT-->ename
+
+------Solution----
+create or replace function f1(p_empno number)
+return varchar2
+as
+v_ename emp1.ename%type;
+Begin
+select ename into v_ename 
+from emp1
+where empno=p_empno;
+
+return v_ename;
+
+End f1;
+
+----Execute function---
+1) Method 1--> 
+
+select f1(7902) from dual;
+
+select f1(&no) from dual;
+
+2) Method 2---> Annonymous block
+
+Declare
+a varchar2(45);
+Begin
+a:=f1(7902);
+dbms_output.put_line(a);
+end;
+
+set serverout on;
+
+
+3) Method 3:
+
+Begin
+dbms_output.put_line(f1(7902));
+end;
+
+================================================================================
+Exmple:
+Requirement:
+- Take deptno from user and return employee count in corresponding dept 
+from emp1 table.
+
+-IN--->deptno
+-OUT-->count
+
+----solution---------
+
+create or replace function f2(p_deptno number)
+return number
+as
+v_count number;
+Begin
+select count(1) into v_count 
+from emp1
+where deptno=p_deptno;
+
+return v_count;
+end f2;
+
+------Execute
+
+select f2(10) from dual;
+
+================================================================================
+Exmple:
+Requirement :
+- Take empno from user and return sal from emp1 table using Function.
+
+-IN--->empno
+-OUT-->sal
+
+------solution-------------
+
+create or replace function f3(p_empno number)
+return number
+as
+v_sal emp1.sal%type;
+Begin
+select sal into v_sal 
+from emp1
+where empno=p_empno;
+
+return v_sal;
+end;
+
+----------Execute---
+
+select f3(7902) from dual;
+
+================================================================================
+- Lets create a Procedure and will try to call function within Procedure to 
+achieve code reuseability
+
+Requirement:
+Take empno and deptno from user and if sal>2000 and count in dept>3
+then insert into emp30 table data from emp1 table,
+Else insert inot emp40 table.
+
+create table emp30 
+as select * from emp1
+where 1=2;
+
+create table emp40 
+as select * from emp1
+where 1=2;
+
+----Create Procedure----
+
+create or replace procedure p5(p_empno number,p_deptno number)
+as
+v_sal emp1.sal%type;
+v_count number;
+
+begin
+select count(1) into v_count from emp1
+where deptno=p_deptno;
+
+select sal into v_sal from emp1
+where empno=p_empno;
+
+if v_count>3 and v_sal>2000 then
+insert into emp30 (empno,sal,deptno)
+            values (p_empno,v_sal,p_deptno);
+            
+else
+insert into emp40 (empno,sal,deptno)
+            values (p_empno,v_sal,p_deptno);
+
+end if;
+end p5;
+
+----exec----
+
+exec p5(7902,20);
+
+select * from emp30;
+select * from emp40;
+
+
+--------------------------------------------------------------
+
+Now we will us function in above procedure for Code Reuseability
+
+----
+create or replace procedure p6(p_empno number,p_deptno number)
+as
+v_sal emp1.sal%type;
+v_count number;
+
+begin
+--select count(1) into v_count from emp1
+--where deptno=p_deptno;
+
+--select f2(p_deptno) into v_count from dual;
+v_count:=f2(p_deptno);
+
+--select f3(p_empno) into v_sal from dual;
+v_sal:=f3(p_empno);
+
+--select sal into v_sal from emp1
+--where empno=p_empno;
+
+if v_count>3 and v_sal>2000 then
+insert into emp30 (empno,sal,deptno)
+            values (p_empno,v_sal,p_deptno);
+            
+else
+insert into emp40 (empno,sal,deptno)
+            values (p_empno,v_sal,p_deptno);
+
+end if;
+end p6;
+
+----exec----
+
+exec p6(7902,20);
+
+select * from emp30;
+select * from emp40;
+
+delete from emp30;
